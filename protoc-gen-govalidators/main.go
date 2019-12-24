@@ -22,7 +22,7 @@ func main() {
 	if err != nil {
 		gen.Error(err, "reading input")
 	}
-
+	//ioutil.WriteFile("./data.txt",data,666)
 
 	if err := proto.Unmarshal(data, gen.Request); err != nil {
 		gen.Error(err, "parsing input proto")
