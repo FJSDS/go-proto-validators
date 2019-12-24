@@ -75,6 +75,7 @@ type plugin struct {
 	regexPkg      generator.Single
 	fmtPkg        generator.Single
 	validatorPkg  generator.Single
+	stringsPkg  generator.Single
 	useGogoImport bool
 }
 
@@ -97,8 +98,8 @@ func (p *plugin) Generate(file *generator.FileDescriptor) {
 	p.PluginImports = generator.NewPluginImports(p.Generator)
 	p.regexPkg = p.NewImport("regexp")
 	p.fmtPkg = p.NewImport("fmt")
+	p.stringsPkg = p.NewImport("strings")
 	p.validatorPkg = p.NewImport("github.com/FJSDS/go-proto-validators")
-
 	for _, msg := range file.Messages() {
 		if msg.DescriptorProto.GetOptions().GetMapEntry() {
 			continue
@@ -177,6 +178,7 @@ func (p *plugin) generateRegexVars(file *generator.FileDescriptor, message *gene
 			}
 		}
 	}
+	p.P(`var _ = `,p.stringsPkg.Use(),`.ReplaceAll`)
 }
 
 func (p *plugin) generateProto2Message(file *generator.FileDescriptor, message *generator.Descriptor) {
@@ -284,7 +286,13 @@ func (p *plugin) generateProto3Message(file *generator.FileDescriptor, message *
 	for _, field := range message.Field {
 		variableName := "this." + p.GetOneOfFieldName(message,field)
 		if field.IsString(){
-			p.P(variableName," = strings.ReplaceAll(",variableName,`," ","")`)
+			if field.IsRepeated(){
+				p.P(`for k:=range `,variableName,`{`)
+				p.P(variableName,`[k]=strings.ReplaceAll(`,variableName,`[k]," ","")`)
+				p.P(`}`)
+			}else{
+				p.P(variableName," = strings.ReplaceAll(",variableName,`," ","")`)
+			}
 		}
 	}
 	for _, field := range message.Field {
