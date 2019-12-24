@@ -282,6 +282,12 @@ func (p *plugin) generateProto3Message(file *generator.FileDescriptor, message *
 		}
 	}
 	for _, field := range message.Field {
+		variableName := "this." + p.GetOneOfFieldName(message,field)
+		if field.IsString(){
+			p.P(variableName," = strings.ReplaceAll(",variableName,`," ","")`)
+		}
+	}
+	for _, field := range message.Field {
 		fieldValidator := getFieldValidatorIfAny(field)
 		if fieldValidator == nil && !field.IsMessage() {
 			continue
@@ -543,7 +549,6 @@ func (p *plugin) generateStringValidator(variableName string, ccTypeName string,
 				fv.Regex = &uuid
 			}
 		}
-
 		p.P(`if !`, p.regexName(ccTypeName, fieldName), `.MatchString(`, variableName, `) {`)
 		p.In()
 		errorStr := "be a string conforming to regex " + strconv.Quote(fv.GetRegex())
@@ -560,6 +565,10 @@ func (p *plugin) generateStringValidator(variableName string, ccTypeName string,
 		p.P(`}`)
 	}
 	p.generateLengthValidator(variableName, ccTypeName, fieldName, fv)
+}
+
+func (p *plugin) generateStringFilterSql(variableName string, ccTypeName string, fieldName string, fv *validator.FieldValidator) {
+
 }
 
 func (p *plugin) generateRepeatedCountValidator(variableName string, ccTypeName string, fieldName string, fv *validator.FieldValidator) {
